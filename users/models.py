@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager # Импортируем базовый UserManager
 from django.db import models
+from django.conf import settings
+from lms.models import Course, Lesson
 
 # 1. Создаем кастомный менеджер пользователей
 class CustomUserManager(BaseUserManager):
@@ -48,3 +50,36 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class Payment(models.Model):
+    # Способы оплаты
+    METHOD_CHOICES = [
+        ('cash', 'Наличные'),
+        ('transfer', 'Перевод на счет'),
+    ]
+
+    # Поле пользователь (ссылка на модель пользователя Django)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='пользователь')
+
+    # Поле дата оплаты
+    payment_date = models.DateTimeField(auto_now_add=True, verbose_name='дата оплаты')
+
+    # Поле оплаченный курс (ссылка на модель Course из lms), может быть null
+    paid_course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True,
+                                    verbose_name='оплаченный курс')
+    paid_lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, null=True, blank=True,
+                                    verbose_name='оплаченный урок')
+
+    # Сумма оплаты
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='сумма оплаты')
+
+    # Способ оплаты
+    payment_method = models.CharField(max_length=10, choices=METHOD_CHOICES, verbose_name='способ оплаты')
+
+    def __str__(self):
+        return f"{self.user} - {self.payment_amount} ({self.payment_method})"
+
+    class Meta:
+        verbose_name = 'платеж'
+        verbose_name_plural = 'платежи'
+        ordering = ['-payment_date'] # Сортировка по дате оплаты по убыванию

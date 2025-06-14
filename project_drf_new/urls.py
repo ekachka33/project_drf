@@ -20,16 +20,21 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from lms.views import CourseViewSet
 import lms.urls
+from lms.views import CourseViewSet, LessonViewSet
+from users.views import PaymentViewSet # Импортируем наш PaymentViewSet
 from django.conf import settings
 from django.conf.urls.static import static
 
 # Создаем экземпляр DefaultRouter
 router = DefaultRouter()
-# Регистрируем наш CourseViewSet с префиксом 'courses'
 router.register(r'courses', CourseViewSet, basename='courses')
+router.register(r'lessons', LessonViewSet) # Убедитесь, что LessonViewSet тоже зарегистрирован, если его нет
+router.register(r'payments', PaymentViewSet) # <-- ДОБАВИТЬ ЭТО
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
     path('', include(router.urls)),
     path('lms/', include(lms.urls)),
 ]
