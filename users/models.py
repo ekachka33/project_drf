@@ -38,8 +38,8 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractUser):
     username = None  # отключаем username
     email = models.EmailField('Email address', unique=True)
-    phone = models.CharField(max_length=20, blank=True)
-    city = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
 
     USERNAME_FIELD = 'email'
