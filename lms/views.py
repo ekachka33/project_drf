@@ -1,54 +1,33 @@
-from django.shortcuts import render
-from rest_framework import viewsets, generics
+# lms/views.py (ДОЛЖЕН ВЫГЛЯДЕТЬ ТАК)
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
+from users.permissions import IsModerator, IsOwner
 
 class CourseViewSet(viewsets.ModelViewSet):
-    """
-    Viewset для модели Course.
-    Предоставляет операции CRUD (Create, Retrieve, Update, Destroy, List).
-    """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
-# --- Generic-классы для модели Lesson ---
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
-class LessonListAPIView(generics.ListAPIView):
-    """
-    APIView для получения списка всех уроков.
-    """
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Модераторы').exists():
+            return Course.objects.all()
+        return Course.objects.filter(owner=self.request.user)
+
+class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
-class LessonRetrieveAPIView(generics.RetrieveAPIView):
-    """
-    APIView для получения одного урока по его ID.
-    """
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
-class LessonCreateAPIView(generics.CreateAPIView):
-    """
-    APIView для создания нового урока.
-    """
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-
-class LessonUpdateAPIView(generics.UpdateAPIView):
-    """
-    APIView для обновления существующего урока.
-    """
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-
-class LessonDestroyAPIView(generics.DestroyAPIView):
-    """
-    APIView для удаления урока.
-    """
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
-
-
-class LessonViewSet(viewsets.ModelViewSet): # <-- ЭТОТ КЛАСС ДОЛЖЕН СУЩЕСТВОВАТЬ
-    queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Модераторы').exists():
+            return Lesson.objects.all()
+        return Lesson.objects.filter(owner=self.request.user)
