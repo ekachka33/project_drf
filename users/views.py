@@ -1,37 +1,55 @@
 # users/views.py
-import django_filters
-from rest_framework import viewsets
-from users.models import Payment
-from .serializers import PaymentSerializer, UserSerializer
-from .filters import PaymentFilter
-from rest_framework.filters import OrderingFilter # Для сортировки, если не использовали OrderingFilter в PaymentFilter
-import django_filters.rest_framework
-from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
+
+# Стандартные импорты Django
 from django.contrib.auth import get_user_model
+
+# Импорты сторонних библиотек
+import django_filters
+import django_filters.rest_framework # Если не используется явно, можно убрать
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+# Импорты из текущего проекта/приложения
+from .models import Payment # Убедись, что модель Payment существует и доступна
+from .serializers import PaymentSerializer, UserSerializer
+from .filters import PaymentFilter # Убедись, что users/filters.py существует и содержит PaymentFilter
+
+
+# Инициализация модели пользователя
 User = get_user_model()
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
-
+    """
+    ViewSet для управления платежами.
+    Предоставляет операции CRUD, а также фильтрацию и сортировку.
+    """
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, OrderingFilter) # Добавляем бэкенды фильтрации и сортировки
-    filterset_class = PaymentFilter # Указываем наш PaymentFilter
-    ordering_fields = ['payment_date', 'payment_amount']
-    ordering = ['-payment_date'] # Сортировка по умолчанию (но filter.OrderingFilter переопределит ее, если передать параметр)
+    # Используем DjangoFilterBackend для фильтрации и OrderingFilter для сортировки
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, OrderingFilter)
+    filterset_class = PaymentFilter # Применяем наш PaymentFilter
+    ordering_fields = ['payment_date', 'payment_amount'] # Поля, по которым разрешена сортировка
+    ordering = ['-payment_date'] # Сортировка по умолчанию: от новых платежей к старым
+
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all() # Используем get_user_model() для получения User
+    """
+    ViewSet для управления пользователями.
+    Предоставляет операции CRUD. Разрешения настраиваются динамически.
+    """
+    queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    # Настройка разрешений в зависимости от действия (action)
     def get_permissions(self):
-        if self.action == 'create': # Для регистрации (создания пользователя)
+        """
+        Возвращает список разрешений в зависимости от текущего действия (action).
+        - Для действия 'create' (регистрация) разрешен доступ всем (AllowAny).
+        - Для всех остальных действий (просмотр, обновление, удаление) требуется аутентификация (IsAuthenticated).
+        """
+        if self.action == 'create':
             self.permission_classes = [AllowAny]
-        else: # Для просмотра, редактирования, удаления (т.е. для CRUD)
+        else:
             self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
-
-# Добавляем импорт User (если его нет)
-from django.contrib.auth import get_user_model
-User = get_user_model()
