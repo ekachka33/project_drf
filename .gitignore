@@ -1,30 +1,34 @@
-# Byte-code files
-*.pyc
+# Python
 __pycache__/
-
-# Database
-db.sqlite3
-*.sqlite3-journal
-
-# Virtual environment
-.venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
 env/
+.venv/
 venv/
+lib/
+local/
+bin/ # <-- Убедись, что 'bin/' тоже есть, если он в твоем .venv
 
-# Media files
-media/
-
-# Log files
+# Django
 *.log
-*.log.*
-
-# IDE-specific files
-.idea/          # For PyCharm/IntelliJ
-.vscode/        # For VS Code
-*.iml           # For IntelliJ
-*.DS_Store      # For macOS
-
-# Django specific
 *.pot
 *.mo
-local_settings.py # If you have a separate local settings file
+*.sqlite3
+db.sqlite3
+*.env # <-- ДОБАВЛЕНО: игнорируем файл .env
+media/
+static/
+*/migrations/ # <-- ДОБАВЛЕНО: игнорируем папки миграций во всех приложениях
+
+# IDE-specific files
+.idea/
+.vscode/
+*.iml
+*.DS_Store
+
+# Django specific
+# *.pot # <-- уже есть в Django секции выше, можно удалить дубликат
+# *.mo  # <-- уже есть в Django секции выше, можно удалить дубликат
+local_settings.py
