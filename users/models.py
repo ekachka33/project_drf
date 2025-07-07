@@ -1,9 +1,9 @@
-from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager # Импортируем базовый UserManager
+from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from django.db import models
 from django.conf import settings
 from lms.models import Course, Lesson
 
-# 1. Создаем кастомный менеджер пользователей
+
 class CustomUserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
         """
@@ -25,7 +25,7 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True) # Обычно суперпользователи всегда активны
+        extra_fields.setdefault('is_active', True)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -36,20 +36,20 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    username = None  # отключаем username
+    username = None
     email = models.EmailField('Email address', unique=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = [] # Больше не нужен email, так как он USERNAME_FIELD, и username нет
+    REQUIRED_FIELDS = []
 
-    # 2. Назначаем кастомный менеджер нашей модели User
     objects = CustomUserManager()
 
     def __str__(self):
         return self.email
+
 
 class Payment(models.Model):
     # Способы оплаты
@@ -58,22 +58,13 @@ class Payment(models.Model):
         ('transfer', 'Перевод на счет'),
     ]
 
-    # Поле пользователь (ссылка на модель пользователя Django)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='пользователь')
-
-    # Поле дата оплаты
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name='дата оплаты')
-
-    # Поле оплаченный курс (ссылка на модель Course из lms), может быть null
     paid_course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True,
                                     verbose_name='оплаченный курс')
     paid_lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, null=True, blank=True,
                                     verbose_name='оплаченный урок')
-
-    # Сумма оплаты
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='сумма оплаты')
-
-    # Способ оплаты
     payment_method = models.CharField(max_length=10, choices=METHOD_CHOICES, verbose_name='способ оплаты')
 
     def __str__(self):
@@ -82,4 +73,27 @@ class Payment(models.Model):
     class Meta:
         verbose_name = 'платеж'
         verbose_name_plural = 'платежи'
-        ordering = ['-payment_date'] # Сортировка по дате оплаты по убыванию
+        ordering = ['-payment_date']
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='subscriptions'
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        verbose_name='Курс',
+        related_name='subscriptions'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'course')
+
+    def __str__(self):
+        return f'Подписка {self.user.email} на курс {self.course.title}'
