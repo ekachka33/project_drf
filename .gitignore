@@ -19,10 +19,10 @@ media/
 *.log.*
 
 # IDE-specific files
-.idea/          # For PyCharm/IntelliJ
-.vscode/        # For VS Code
-*.iml           # For IntelliJ
-*.DS_Store      # For macOS
+.idea/
+.vscode/
+*.iml
+*.DS_Store
 
 # Django specific
 *.pot
